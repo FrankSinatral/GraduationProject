@@ -37,6 +37,28 @@ class Matrix
          }
          return B;
      }
+     //计算矩阵的行列式
+     double matrixDeterminant(vector<vector<double>> A, int n) {
+         if (n == 1) {
+             return A[0][0];
+         }
+         double ans = 0;
+         vector<vector<double>> temp(n - 1,vector<double>(n - 1,0));
+         for (int i = 0; i < n; ++i) {
+             for (int j = 0; j < n - 1; ++j) {
+                 for (int k = 0; k < n - 1;++k) {
+                     temp[j][k] = A[j + 1][(k>=i)? k + 1:k];
+                 }
+             }
+             double t = matrixDeterminant(temp,n - 1);
+             if (i%2 == 0) {
+                 ans += A[0][i]*t;
+             } else {
+                 ans -= A[0][i]*t;
+             }
+         }
+         return ans;
+     }
 };
 int main()
 {
@@ -49,6 +71,8 @@ int main()
     Matrix m;
     vector<vector<int>> d = m.matrixMultiply(m.matrixMultiply(m.matrixTranspose(a),b),c);
     std::cout  << d[0][0] <<" "<< d[1][0] << std::endl;
+    vector<vector<double>> e ={{1,2},{3,4}};
+    std::cout << m.matrixDeterminant(e,2) << std::endl;
     return 0;
 }
 
