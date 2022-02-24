@@ -5,9 +5,9 @@ using std::vector;
 class Matrix
 {
   public:
-     vector<vector<int>> matrixAdd(vector<vector<int>> A, vector<vector<int>> B) {
+     vector<vector<double>> matrixAdd(vector<vector<double>> A, vector<vector<double>> B) {
        int m = A.size(), n = A[0].size();
-       vector<vector<int>> C(m,vector<int>(n,0));
+       vector<vector<double>> C(m,vector<double>(n,0));
        for (int i =0; i < m; ++i) {
          for (int j = 0; j < n; ++j) {
             C[i][j] = A[i][j] + B[i][j];
@@ -15,9 +15,9 @@ class Matrix
        }
         return C;
     }
-     vector<vector<int>> matrixMultiply(vector<vector<int>> A, vector<vector<int>> B) {
+     vector<vector<double>> matrixMultiply(vector<vector<double>> A, vector<vector<double>> B) {
          int m = A.size(), n = A[0].size(), k = B[0].size();
-         vector<vector<int>> C(m,vector<int>(k,0));
+         vector<vector<double>> C(m,vector<double>(k,0));
          for (int i = 0; i < m; ++i) {
              for (int j = 0; j < k; ++j) {
                  for (int l = 0; l < n; ++l) {
@@ -59,20 +59,41 @@ class Matrix
          }
          return ans;
      }
+     vector<vector<double>> matrixInv(vector<vector<double>> A) {
+         int n = A.size();
+         double Det = matrixDeterminant(A,n);
+         double tempDet = 0;
+         if (Det == 0) {
+             std::cout << "There is no such inverse matrix" << std::endl;
+         }
+         vector<vector<double>> ans(n,vector<double>(n,0));
+         vector<vector<double>> temp(n -1,vector<double>(n - 1,0));
+         for (int i = 0; i < n; ++i) {
+             for (int j = 0; j < n; ++j) {
+                 for (int s = 0; s < n -1;++s) {
+                     for (int t = 0; t < n - 1;++t) {
+                         temp[s][t] = A[(s>=j)?s+1:s][(t>=i)?t+1:t];
+                     }
+                 }
+                 tempDet = matrixDeterminant(temp,n - 1);
+                 if ((i - j)%2 ==0){
+                    ans[i][j] = tempDet/Det;
+                 } else {
+                     ans[i][j] = -tempDet/Det;
+                 }
+             }
+         }
+         return ans;
+     }
 };
 int main()
 {
-    vector<vector<int>> a;
-    a = {{1,2}};
-    vector<vector<int>> b;
-    b = {{3,4}};
-    vector<vector<int>> c;
-    c = {{5},{6}};
     Matrix m;
-    vector<vector<int>> d = m.matrixMultiply(m.matrixMultiply(m.matrixTranspose(a),b),c);
-    std::cout  << d[0][0] <<" "<< d[1][0] << std::endl;
-    vector<vector<double>> e ={{1,2},{3,4}};
-    std::cout << m.matrixDeterminant(e,2) << std::endl;
+    vector<vector<double>> a ={{1,1},{1,1}};
+    vector<vector<double>> b = m.matrixInv(a);
+    for (int i = 0; i < 2;++i) {
+     std::cout << b[i][0] <<" "<< b[i][1] << std::endl;
+    }
     return 0;
 }
 
