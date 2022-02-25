@@ -10,7 +10,43 @@ class Matrix
     vector<vector<double>> matrixTranspose(vector<vector<double>> A);
     double matrixDeterminant(vector<vector<double>> A, int n);
     vector<vector<double>> matrixInv(vector<vector<double>> A);
+    vector<double> vectorAdd(vector<double> A,vector<double> B);
+    vector<double> vectorSubtract(vector<double> A,vector<double> B);
+    vector<vector<double>> vecToMat(vector<double> A);
+    vector<double> matToVec(vector<vector<double>> A);
 };
+vector<double> Matrix::matToVec(vector<vector<double>> A) {
+  int m = A[0].size();
+  vector<double> ans(m,0);
+  for (int i = 0; i < m; ++i) {
+    ans[i] = A[0][i];
+  }
+  return ans;
+}
+vector<vector<double>> Matrix::vecToMat(vector<double> A) {
+  int m = A.size();
+  vector<vector<double>> ans(1,vector<double>(m,0));
+  for (int i = 0; i < m; ++i) {
+    ans[0][i] = A[i];
+  }
+  return ans;
+}
+vector<double> Matrix::vectorAdd(vector<double> A,vector<double> B) {
+  int m = A.size();
+  vector<double> C(m,0);
+  for (int i = 0; i < m; ++i) {
+    C[i] = A[i] + B[i];
+  }
+  return C;
+}
+vector<double> Matrix::vectorSubtract(vector<double> A,vector<double> B) {
+  int m = A.size();
+  vector<double> C(m,0);
+  for (int i = 0; i < m; ++i) {
+    C[i] = A[i] - B[i];
+  }
+  return C;
+}
 vector<vector<double>> Matrix::matrixAdd(vector<vector<double>> A, vector<vector<double>> B) {
   int m = A.size(), n = A[0].size();
   vector<vector<double>> C(m,vector<double>(n,0));
