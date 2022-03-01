@@ -17,27 +17,32 @@ class iLQR {
        }
        return X;
    }
-   //输入原有的状态集和控制集，以及计算的k,K,更新新的状态集和控制集
-   void forward_pass(vector<vector<double>> X,vector<vector<double>> U,vector<vector<double>> k,vector<vector<vector<double>>> K) {
+   //输入原有的状态集和控制集，以及计算的k,K,更新新的状态集和控制集，返回值中第一维为新的状态集，第二维为新的控制集
+   vector<vector<vector<double>>> forward_pass(vector<vector<double>> X,vector<vector<double>> U,vector<vector<vector<double>>> k,vector<vector<vector<double>>> K) {
+       vector<vector<vector<double>>> ans;
        vector<vector<double>> X_new(model.N + 1,vector<double>(4,0));
        X_new[0] = X[0];
        vector<vector<double>> U_new(model.N, vector<double>(2,0));
        for (int i = 0; i < model.N; ++i) {
            //此处写完backward_pass之后还有待调试
-           U_new[i] = m.vectorAdd(m.vectorAdd(U[i],k[i]),m.matToVec(m.matrixMultiply(K[i],m.vecToMat(m.vectorSubtract(X_new[i],X[i])))));
+           U_new[i] = m.vectorAdd(m.vectorAdd(U[i],m.columnToRow(k[i])),m.matToVec(m.matrixMultiply(K[i],m.vecToMat(m.vectorSubtract(X_new[i],X[i])))));
            X_new[i + 1] = model.forward_simulate(X_new[i],U_new[i]);
        }
+       ans.push_back(X_new);
+       ans.push_back(U_new);
+       return ans;
    }
-   //backward_pass过程
+   //backward_pass过程,返回值的第一维为k，第二维为K
    
-   void backward_pass(vector<vector<double>> X,vector<vector<double>> U) {
+   vector<vector<vector<vector<double>>>> backward_pass(vector<vector<double>> X,vector<vector<double>> U) {
+       vector<vector<vector<vector<double>>>> ans;
        //此处限制条件应该写在另外一个文件中
        double a_high = 0,a_low = 0,delta_bar = 0;
        //调用constraint类直接得到所有的状态偏导
        vector<vector<vector<double>>> l_x = l.get_state_first_derivatives(X);
        vector<vector<vector<double>>> l_xx = l.get_state_second_derivatives();
-       vector<vector<vector<double>>> l_u = l.get_control_first_derivatives(U,a_high,a_low, delta_bar);
-       vector<vector<vector<double>>> l_uu = l.get_control_second_derivatives(U, a_high, a_low, delta_bar);
+       vector<vector<vector<double>>> l_u = l.get_control_first_derivatives(U);
+       vector<vector<vector<double>>> l_uu = l.get_control_second_derivatives(U);
        vector<vector<double>> l_ux(2,vector<double>(4,0));
 
        //获取model的各个状态量,调用model类的函数
@@ -76,6 +81,9 @@ class iLQR {
            V_x = m.matrixSubtract(Q_x,m.matrixMultiply(m.matrixMultiply(m.matrixTranspose(K[i]),Q_uu),k[i]));
            V_xx = m.matrixSubtract(Q_xx,m.matrixMultiply(m.matrixMultiply(m.matrixTranspose(K[i]),Q_uu),K[i]));
        }
+       ans.push_back(k);
+       ans.push_back(K);
+       return ans;
 
    }
   
