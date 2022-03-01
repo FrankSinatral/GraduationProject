@@ -16,7 +16,17 @@ class Matrix
     vector<vector<double>> vecToMat(vector<double> A);
     vector<double> matToVec(vector<vector<double>> A);
     vector<vector<double>> changeSign(vector<vector<double>> A);
+    vector<double> columnToRow(vector<vector<double>> A);
 };
+//将一个列向量（矩阵）转化为行向量
+vector<double> columnToRow(vector<vector<double>> A) {
+  int m = A.size();
+  vector<double> ans(m,0);
+  for (int i = 0; i < m; ++i) {
+    ans[i] = A[i][0]; 
+  }
+  return ans;
+}
 vector<vector<double>> Matrix::matrixSubtract(vector<vector<double>> A, vector<vector<double>> B) {
   int m = A.size(), n = A[0].size();
   vector<vector<double>> C(m,vector<double>(n,0));
