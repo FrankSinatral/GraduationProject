@@ -8,10 +8,11 @@ class L_Functions{
      double a_high,a_low,delta_bar;//限制条件
      double v_ref;//参考速度
      int N;//Horizon
-     double t;//barrier function中的参数t
+     double t;//barrier function中的参数t，需要选取一个初值
     //vector<vector<vector<double>>> l_ux(N,vector<vector<double>>(2,vector<double>(4,0))); //事实上，l_ux即为2*4的零矩阵
     //首先求cost function对于control的一二阶偏导数
-     vector<vector<vector<double>>> get_control_first_derivatives(vector<vector<double>> control,double a_high, double a_low, double delta_bar) {
+    //l_u是一个2*1向量，0,1...N - 1个状态 
+     vector<vector<vector<double>>> get_control_first_derivatives(vector<vector<double>> control) {
         vector<vector<vector<double>>> l_u(N,vector<vector<double>>(2,vector<double>(1,0)));
         for (int i = 0; i < N; ++i) {
             l_u[i] = {{2*w_acc*control[i][0] + 1/(t*(a_high - control[i][0]))-1/(t*(control[i][0] - a_low))},
@@ -19,7 +20,8 @@ class L_Functions{
         }
         return l_u;
      }
-     vector<vector<vector<double>>> get_control_second_derivatives(vector<vector<double>> control,double a_high, double a_low, double delta_bar) {
+     //l_uu是一个2*2矩阵，0,1...,N - 1个状态
+     vector<vector<vector<double>>> get_control_second_derivatives(vector<vector<double>> control) {
         vector<vector<vector<double>>> l_uu(N,vector<vector<double>>(2,vector<double>(2,0)));
         for (int i = 0; i < N; ++i) {
             l_uu[i] = {{2*w_acc + 1/(t*(a_high - control[i][0])*(a_high - control[i][0])) + 1/(t*(control[i][0] - a_low)*(control[i][0] - a_low)),0},
@@ -94,6 +96,8 @@ class L_Functions{
       return sum;
      }
      //计算obscalcle限制并转化为barrier function
+
+     
      //计算代价函数总和
      double cost_all(vector<vector<double>> state, vector<vector<double>> control) {
       double ans = 0;
