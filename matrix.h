@@ -17,7 +17,17 @@ class Matrix
     vector<double> matToVec(vector<vector<double>> A);
     vector<vector<double>> changeSign(vector<vector<double>> A);
     vector<double> columnToRow(vector<vector<double>> A);
+    vector<double> scaleVec(vector<double> A,double alpha);
 };
+//将一个行向量统一乘以一个标量alpha
+vector<double> scaleVec(vector<double> A,double alpha) {
+  int m = A.size();
+  vector<double> ans;
+  for (int i = 0; i < m;++i) {
+    ans[i] = alpha*A[i];
+  }
+  return ans;
+}
 //将一个列向量（矩阵）转化为行向量
 vector<double> columnToRow(vector<vector<double>> A) {
   int m = A.size();
