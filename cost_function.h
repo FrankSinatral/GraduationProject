@@ -1,5 +1,7 @@
 #include<vector>
 #include<math.h>
+#include"barrier_function.h"
+#include"vehicle_model.h"
 using std::vector;
 //处理代价函数的模块，包括计算代价函数值以及偏导数
 class L_Functions{
@@ -9,6 +11,8 @@ class L_Functions{
      double v_ref;//参考速度
      int N;//Horizon
      double t;//barrier function中的参数t，需要选取一个初值
+
+     
     //vector<vector<vector<double>>> l_ux(N,vector<vector<double>>(2,vector<double>(4,0))); //事实上，l_ux即为2*4的零矩阵
     //首先求cost function对于control的一二阶偏导数
     //l_u是一个2*1向量，0,1...N - 1个状态 
@@ -31,21 +35,34 @@ class L_Functions{
      }
     //下面求cost function对于state的一二阶偏导数
     //l_x是一个4*1向量，0,1...N个状态
-     vector<vector<vector<double>>> get_state_first_derivatives(vector<vector<double>> state) {
+     vector<vector<vector<double>>> get_state_first_derivatives(vector<vector<double>> state,vector<double> center,vector<vector<double>> A) {
         vector<vector<vector<double>>> l_x(N + 1,vector<vector<double>>(4,vector<double>(1,0)));
+        class Barrier_Function bar;
+        class Model model;
+        class Matrix m;
+        vector<vector<double>> loc = model.get_loc(state);
+        vector<vector<vector<double>>> obs_bar_first_derivatives = bar.get_obs_bar_first_derivatives(loc,center,A,t);
         for (int i = 0; i < N + 1; ++i) {
-            l_x[i] = {{0},{2*w_ref*state[i][1]},{2*w_vel*(state[i][2] - v_ref)},{0}};//此处少了涉及一个位置信息相关的函数求导
+            l_x[i] = {{0},{2*w_ref*state[i][1]},{2*w_vel*(state[i][2] - v_ref)},{0}};
+            l_x[i] = m.matrixAdd(l_x[i],obs_bar_first_derivatives[i]);//加上障碍物求导项
         }
         return l_x;
      }
     //l_xx是一个4*4向量，0,1...N个状态 
-     vector<vector<vector<double>>> get_state_second_derivatives() {
+     vector<vector<vector<double>>> get_state_second_derivatives(vector<vector<double>> state,vector<double> center,vector<vector<double>> A) {
         vector<vector<vector<double>>> l_xx(N + 1,vector<vector<double>>(4,vector<double>(4,0)));
+        class Barrier_Function bar;
+        class Model model;
+        class Matrix m;
+        vector<vector<double>> loc = model.get_loc(state);
+        vector<vector<vector<double>>> obs_bar_second_derivatives = bar.get_obs_bar_second_derivatives(loc,center,A,t);
         for (int i = 0; i < N + 1; ++i) {
-            l_xx[i] = {{0,0,0,0},{0,2*w_ref,0,0},{0,0,2*w_vel,0},{0,0,0,0}};//此处少了涉及一个位置信息相关的函数求导
+            l_xx[i] = {{0,0,0,0},{0,2*w_ref,0,0},{0,0,2*w_vel,0},{0,0,0,0}};
+            l_xx[i] = m.matrixAdd(l_xx[i],obs_bar_second_derivatives[i]);
         }
         return l_xx;
      }
+     
     //计算代价函数
     //加速度
      double cost_acc(vector<vector<double>> control) {
@@ -95,17 +112,18 @@ class L_Functions{
       }
       return sum;
      }
-     //计算obscalcle限制并转化为barrier function
-
-     
+     //计算obscalcle限制并转化为barrier function,利用Barrier_Function类进行计算，直接加入到代价函数总和中
      //计算代价函数总和
-     double cost_all(vector<vector<double>> state, vector<vector<double>> control) {
+     double cost_all(vector<vector<double>> state, vector<vector<double>> control,vector<double> center,vector<vector<double>> A) {
       double ans = 0;
+      class Barrier_Function bar;
+      class Model model;
+      vector<vector<double>> loc = model.get_loc(state);
       double sum_1 = cost_acc(control), sum_2 = cost_steer(control);
       double sum_3 = cost_veltracking(state), sum_4 = cost_reftracking(state);
       double sum_5 = cost_acc_bf(control), sum_6 = cost_delta_bf(control);
-      //double sum_7
-      ans = sum_1 + sum_2 + sum_3 + sum_4 + sum_5 + sum_6;
+      double sum_7 = bar.get_obs_bar_value(loc,center,A,t);
+      ans = sum_1 + sum_2 + sum_3 + sum_4 + sum_5 + sum_6 + sum_7;
       return ans;
 
      }
