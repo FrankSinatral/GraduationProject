@@ -13,14 +13,21 @@ class Matrix
     vector<vector<double>> matrixInv(vector<vector<double>> A);
     vector<double> vectorAdd(vector<double> A,vector<double> B);
     vector<double> vectorSubtract(vector<double> A,vector<double> B);
-    vector<vector<double>> vecToMat(vector<double> A);
-    vector<double> matToVec(vector<vector<double>> A);
+    vector<vector<double>> vecToMat(vector<double> A);//{1,2,3} -> {{1,2,3}}
+    vector<double> matToVec(vector<vector<double>> A);//{{1,2,3}} -> {1,2,3}
     vector<vector<double>> changeSign(vector<vector<double>> A);
     vector<double> columnToRow(vector<vector<double>> A);
     vector<double> scaleVec(vector<double> A,double alpha);
+    vector<vector<double>> congruentTrans(vector<vector<double>> A,vector<vector<double>> P);
 };
+//实现矩阵的合同变换
+vector<vector<double>> Matrix::congruentTrans(vector<vector<double>> A,vector<vector<double>> P) {
+  vector<vector<double>> ans;
+  ans = matrixMultiply(matrixMultiply(matrixTranspose(P),A),P);
+  return ans;
+}
 //将一个行向量统一乘以一个标量alpha
-vector<double> scaleVec(vector<double> A,double alpha) {
+vector<double> Matrix::scaleVec(vector<double> A,double alpha) {
   int m = A.size();
   vector<double> ans;
   for (int i = 0; i < m;++i) {
@@ -29,7 +36,7 @@ vector<double> scaleVec(vector<double> A,double alpha) {
   return ans;
 }
 //将一个列向量（矩阵）转化为行向量
-vector<double> columnToRow(vector<vector<double>> A) {
+vector<double> Matrix::columnToRow(vector<vector<double>> A) {
   int m = A.size();
   vector<double> ans(m,0);
   for (int i = 0; i < m; ++i) {
@@ -65,6 +72,7 @@ vector<double> Matrix::matToVec(vector<vector<double>> A) {
   }
   return ans;
 }
+//{1,2,3} -> {{1,2,3}}
 vector<vector<double>> Matrix::vecToMat(vector<double> A) {
   int m = A.size();
   vector<vector<double>> ans(1,vector<double>(m,0));
