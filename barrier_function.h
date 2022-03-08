@@ -5,7 +5,7 @@ using std::vector;
 class Barrier_Function {
  public:
   class Matrix m;
-  //返回一个障碍物对于某一轨迹的barrier function总和
+  //返回单个障碍物对于某一轨迹的barrier function总和(注意这一点非常重要)
   double get_obs_bar_value(vector<vector<double>> location, vector<double> center, vector<vector<double>> A,double t) {
     double sum = 0;
     int n = location.size();
@@ -16,9 +16,22 @@ class Barrier_Function {
     }
     return sum;
   }
-  vector<vector<vector<double>>> get_obs_bar_first_derivatives(vector<vector<double>> location, vector<double> center, vector<vector<double>> A,double t) {
-    //class Matrix m;
+  //用于判断对于单个障碍物是否符合限制条件
+  bool check_obs_constraint(vector<vector<double>> location, vector<double> center, vector<vector<double>> A,double t) {
     int n = location.size();
+    for (int i = 0; i < n; ++i) {
+     vector<double> terms = m.vectorSubtract(location[i],center);
+     double f = 1 - (A[0][0]*terms[0]*terms[0] + (A[1][0] + A[0][1])*terms[0]*terms[1] + A[1][1]*terms[1]*terms[1]);
+     if (f >= 0) {
+       return false; 
+     }
+    }
+    return true;
+  }
+  //返回单个障碍物对于整个轨迹的导函数，一阶偏导数即(N+1)*4*1,0,1...N个状态
+  //二阶偏导数即(N+1)*4*4,0.1...N个状态
+  vector<vector<vector<double>>> get_obs_bar_first_derivatives(vector<vector<double>> location, vector<double> center, vector<vector<double>> A,double t) {
+    int n = location.size();//Horizon N + 1
     vector<vector<vector<double>>> ans(n,vector<vector<double>>(4,vector<double>(1,0)));
     for (int i = 0; i < n; ++i) {
      vector<double> terms = m.vectorSubtract(location[i],center);
@@ -35,8 +48,7 @@ class Barrier_Function {
     
   }
   vector<vector<vector<double>>> get_obs_bar_second_derivatives(vector<vector<double>> location, vector<double> center, vector<vector<double>> A,double t) {
-    //class Matrix m;
-    int n = location.size();
+    int n = location.size(); //Horizon N + 1
     vector<vector<vector<double>>> ans(n,vector<vector<double>>(4,vector<double>(4,0)));
     for (int i = 0; i < n; ++i) {
      vector<double> terms = m.vectorSubtract(location[i],center);
