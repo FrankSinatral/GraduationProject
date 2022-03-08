@@ -47,14 +47,14 @@ class iLQR {
    
    vector<vector<vector<vector<double>>>> backward_pass(vector<vector<double>> X,vector<vector<double>> U,vector<vector<double>> obs_center,vector<vector<vector<double>>> obs_mat) {
        int n = U.size(); //Horizon N
-       class Obstacle obs;
-       vector<vector<double>> A = obs.get_obs_matrix(obs.theta,obs.l,obs.w,obs.v_obstacle,obs.t_safe,obs.s_safe);
+       //class Obstacle obs;
+       //vector<vector<double>> A = obs.get_obs_matrix(obs.theta,obs.l,obs.w,obs.v_obstacle,obs.t_safe,obs.s_safe);
        vector<vector<vector<vector<double>>>> ans;
        //此处限制条件应该写在另外一个文件中
        double a_high = 0,a_low = 0,delta_bar = 0;
        //调用constraint类直接得到所有的状态偏导
-       vector<vector<vector<double>>> l_x = l.get_state_first_derivatives(X,obs.center,A);
-       vector<vector<vector<double>>> l_xx = l.get_state_second_derivatives(X,obs.center,A);
+       vector<vector<vector<double>>> l_x = l.get_state_first_derivatives(X,obs_center,obs_mat);
+       vector<vector<vector<double>>> l_xx = l.get_state_second_derivatives(X,obs_center,obs_mat);
        vector<vector<vector<double>>> l_u = l.get_control_first_derivatives(U);
        vector<vector<vector<double>>> l_uu = l.get_control_second_derivatives(U);
        vector<vector<double>> l_ux(2,vector<double>(4,0));
@@ -108,7 +108,7 @@ class iLQR {
    }
   
 };
-class CiLQR {
+/*class CiLQR {
  public:
   class iLQR ilqr;
   vector<vector<vector<double>>> algorithm_cilqr(vector<double> X_0, vector<vector<double>> U,double t_0,double u) {
@@ -118,10 +118,11 @@ class CiLQR {
     double alpha = 1;
     vector<vector<double>> X_new = ilqr.get_X_new(ilqr.forward_pass(X,U,k,K,alpha));
     vector<vector<double>> U_new = ilqr.get_U_new(ilqr.forward_pass(X,U,k,K,alpha));
-    /*while (cost_all(X_new,U_new,center,A) > cost_all(X,U,center,A)) {
+    while (cost_all(X_new,U_new,center,A) > cost_all(X,U,center,A)) {
       alpha/=2;
       
     }
-    */
+    
   }
 };
+*/
