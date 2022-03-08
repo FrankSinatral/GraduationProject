@@ -5,15 +5,17 @@
 #include"constraints.h"
 using std::vector;
 class iLQR {
+  public:
     class Model model;
     class Matrix m;
     class L_Functions l;
    //int N;//Horizon
    //输入初始状态和控制集，返回nomial_trajectory(1*4共0,1...,N个状态)
    vector<vector<double>> get_nomial_trajectory(vector<double> X_0,vector<vector<double>> U) {
-       vector<vector<double>> X(model.N + 1,vector<double>(4,0));
+       int n = U.size();//Horizon N
+       vector<vector<double>> X(n + 1,vector<double>(4,0));
        X[0] = X_0;
-       for (int i = 0; i < model.N;++i) {
+       for (int i = 0; i < n;++i) {
            X[i + 1] = model.forward_simulate(X[i],U[i]); //调用Model类里面的forward_simulate函数
        }
        return X;
@@ -22,10 +24,11 @@ class iLQR {
    //add backtracking line search parameter
    vector<vector<vector<double>>> forward_pass(vector<vector<double>> X,vector<vector<double>> U,vector<vector<vector<double>>> k,vector<vector<vector<double>>> K,double alpha) {
        vector<vector<vector<double>>> ans;
-       vector<vector<double>> X_new(model.N + 1,vector<double>(4,0));
+       int n = X.size();
+       vector<vector<double>> X_new(n,vector<double>(4,0));
        X_new[0] = X[0];
-       vector<vector<double>> U_new(model.N, vector<double>(2,0));
-       for (int i = 0; i < model.N; ++i) {
+       vector<vector<double>> U_new(n - 1, vector<double>(2,0));
+       for (int i = 0; i < n - 1; ++i) {
            //此处写完backward_pass之后还有待调试
            U_new[i] = m.vectorAdd(m.vectorAdd(U[i],m.scaleVec(m.columnToRow(k[i]),alpha)),m.matToVec(m.matrixTranspose(m.matrixMultiply(K[i],m.matrixTranspose(m.vecToMat(m.vectorSubtract(X_new[i],X[i])))))));
            X_new[i + 1] = model.forward_simulate(X_new[i],U_new[i]);
@@ -34,9 +37,16 @@ class iLQR {
        ans.push_back(U_new);
        return ans;
    }
+   vector<vector<double>> get_X_new(vector<vector<vector<double>>> A) {
+       return A[0];
+   }
+   vector<vector<double>> get_U_new(vector<vector<vector<double>>> A) {
+       return A[1];
+   }
    //backward_pass过程,返回值的第一维为k，第二维为K
    
-   vector<vector<vector<vector<double>>>> backward_pass(vector<vector<double>> X,vector<vector<double>> U) {
+   vector<vector<vector<vector<double>>>> backward_pass(vector<vector<double>> X,vector<vector<double>> U,vector<vector<double>> obs_center,vector<vector<vector<double>>> obs_mat) {
+       int n = U.size(); //Horizon N
        class Obstacle obs;
        vector<vector<double>> A = obs.get_obs_matrix(obs.theta,obs.l,obs.w,obs.v_obstacle,obs.t_safe,obs.s_safe);
        vector<vector<vector<vector<double>>>> ans;
@@ -59,11 +69,11 @@ class iLQR {
 
 
        //返回最后一步的Value function的偏导数
-       vector<vector<double>> V_x= l_x[model.N];
-       vector<vector<double>> V_xx= l_xx[model.N];
+       vector<vector<double>> V_x= l_x[n];
+       vector<vector<double>> V_xx= l_xx[n];
        //为feeforward和feeback term预分配内存
-       vector<vector<vector<double>>> k(model.N,vector<vector<double>>(2,vector<double>(1,0)));
-       vector<vector<vector<double>>> K(model.N,vector<vector<double>>(2,vector<double>(4,0)));
+       vector<vector<vector<double>>> k(n,vector<vector<double>>(2,vector<double>(1,0)));
+       vector<vector<vector<double>>> K(n,vector<vector<double>>(2,vector<double>(4,0)));
        //为Q分配内存
        vector<vector<double>> Q_x(4,vector<double>(1,0));
        vector<vector<double>> Q_u(2,vector<double>(1,0));
@@ -72,7 +82,7 @@ class iLQR {
        vector<vector<double>> Q_ux(2,vector<double>(4,0));
        vector<vector<double>> Q_uu_inv(2,vector<double>(2,0));
        //从N - 1一直到0计算状态
-       for (int i = model.N - 1; i >= 0; --i) {
+       for (int i = n - 1; i >= 0; --i) {
            Q_x = m.matrixAdd(l_x[i],m.matrixMultiply(m.matrixTranspose(df_dx[i]),V_x));
            Q_u = m.matrixAdd(l_u[i],m.matrixMultiply(m.matrixTranspose(df_du[i]),V_x));
            Q_xx = m.matrixAdd(l_xx[i],m.matrixMultiply(m.matrixMultiply(m.matrixTranspose(df_dx[i]),V_xx),df_dx[i]));
@@ -90,5 +100,28 @@ class iLQR {
        return ans;
 
    }
+   vector<vector<vector<double>>> get_k(vector<vector<vector<vector<double>>>> A) {
+       return A[0];
+   }
+   vector<vector<vector<double>>> get_K(vector<vector<vector<vector<double>>>> A) {
+       return A[1];
+   }
   
+};
+class CiLQR {
+ public:
+  class iLQR ilqr;
+  vector<vector<vector<double>>> algorithm_cilqr(vector<double> X_0, vector<vector<double>> U,double t_0,double u) {
+    vector<vector<double>> X = ilqr.get_nomial_trajectory(X_0,U);
+    vector<vector<vector<double>>> k = ilqr.get_k(ilqr.backward_pass(X,U));
+    vector<vector<vector<double>>> K = ilqr.get_K(ilqr.backward_pass(X,U));
+    double alpha = 1;
+    vector<vector<double>> X_new = ilqr.get_X_new(ilqr.forward_pass(X,U,k,K,alpha));
+    vector<vector<double>> U_new = ilqr.get_U_new(ilqr.forward_pass(X,U,k,K,alpha));
+    /*while (cost_all(X_new,U_new,center,A) > cost_all(X,U,center,A)) {
+      alpha/=2;
+      
+    }
+    */
+  }
 };

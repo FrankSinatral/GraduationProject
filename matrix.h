@@ -19,7 +19,22 @@ class Matrix
     vector<double> columnToRow(vector<vector<double>> A);
     vector<double> scaleVec(vector<double> A,double alpha);
     vector<vector<double>> congruentTrans(vector<vector<double>> A,vector<vector<double>> P);
+    vector<vector<vector<double>>> matrixAdd_2(vector<vector<vector<double>>> A,vector<vector<vector<double>>> B);
 };
+vector<vector<vector<double>>> Matrix::matrixAdd_2(vector<vector<vector<double>>> A, vector<vector<vector<double>>> B) {
+  int m = A.size();
+  int n = A[0].size();
+  int t = A[0][0].size();
+  vector<vector<vector<double>>> ans(m,vector<vector<double>>(n,vector<double>(t,0)));
+  for (int i = 0; i < m; ++i) {
+    for (int j = 0; j < n; ++j) {
+      for (int s = 0; s < t; ++s) {
+        ans[i][j][s] = A[i][j][s] + B[i][j][s];
+      }
+    }
+  }
+  return ans;
+}
 //实现矩阵的合同变换
 vector<vector<double>> Matrix::congruentTrans(vector<vector<double>> A,vector<vector<double>> P) {
   vector<vector<double>> ans;
