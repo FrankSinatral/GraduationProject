@@ -58,14 +58,3 @@ class Obstacle{
   }*/
 
 };
-class Constraints{
- public:
-  //检验控制集是否满足限制条件
-  
-  /*bool check_obstacle(vector<vector<double>> X) {
-    
-  }
-  bool check_all(vector<vector<double>> X,vector<vector<double>> U,vector<double> a_constraint,double delta_bar) {
-    return check_control(U,a_constraint,delta_bar) && check_obstacle(X);
-  }*/
-};
