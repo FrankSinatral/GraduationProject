@@ -121,15 +121,19 @@ class CiLQR {
     double t = t_0;
     int n = U.size();//Horizon N
     vector<vector<double>> X = ilqr.get_nomial_trajectory(X_0,U);
+    //初始化内外循环的状态量
     vector<vector<double>> X_outer = X;
     vector<vector<double>> U_outer = U;
     vector<vector<double>> X_inner = X;
     vector<vector<double>> U_inner = U;
+    //初始化内外循环的所有new变量
     vector<vector<double>> X_inner_new(n + 1,vector<double>(4,0));
     vector<vector<double>> U_inner_new(n,vector<double>(2,0));
     vector<vector<double>> X_outer_new(n + 1,vector<double>(4,0));
     vector<vector<double>> U_outer_new(n,vector<double>(2,0));
+    //进入外循环
     while(1) {
+     //进入内循环
      while(1) {
      vector<vector<vector<double>>> k = ilqr.get_k(ilqr.backward_pass(X,U,obs_center,obs_mat,t));
      vector<vector<vector<double>>> K = ilqr.get_K(ilqr.backward_pass(X,U,obs_center,obs_mat,t));
@@ -145,22 +149,23 @@ class CiLQR {
       alpha /= 2;   
      }
      if (abs(l.cost_all(X_inner_new,U_inner_new,obs_center,obs_mat,t) - l.cost_all(X_inner,U_inner,obs_center,obs_mat,t)) < eps) {
-       break;  
+      break;  //已经收敛并且跳出内循环
      } else {
-        X_inner = X_inner_new;
-        U_inner = U_inner_new;
+      //没有收敛更新内循环里的状态和控制再次计算
+      X_inner = X_inner_new;
+      U_inner = U_inner_new;
      }
     }
+    //更新外循环的状态和控制
     U_outer_new = U_inner_new;
     X_outer_new = X_inner_new;
     if (abs(l.cost_all(X_outer_new,U_outer_new,obs_center,obs_mat,t) - l.cost_all(X_outer,U_outer,obs_center,obs_mat,t)) < eps) {
-      ans.push_back(X_outer_new);
-      ans.push_back(U_outer_new);
-      break;
+     ans.push_back(X_outer_new);
+     ans.push_back(U_outer_new);
+     break; //已经收敛并且跳出外循环
     } else {
-       t = u*t;
+     t = u*t;//更新Barrier Function里面的参数
     }
-
     }
     return ans; 
   }
