@@ -61,18 +61,7 @@ class Obstacle{
 class Constraints{
  public:
   //检验控制集是否满足限制条件
-  bool check_control(vector<vector<double>> U,vector<double> a_contraint,double delta_bar) {
-    int m = U.size();
-    for (int i = 0; i < m; ++i) {
-      if(U[i][0] > a_contraint[0] || U[i][0] < a_contraint[1]) {
-          return false;
-      }
-      if(U[i][1] < -delta_bar || U[i][1] > delta_bar) {
-          return false;
-      }
-    } 
-    return true;   
-  }
+  
   /*bool check_obstacle(vector<vector<double>> X) {
     
   }

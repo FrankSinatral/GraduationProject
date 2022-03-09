@@ -28,6 +28,17 @@ class Barrier_Function {
     }
     return true;
   }
+  //判断对于多个障碍物是否符合限制条件
+  bool check_all_obs_constraint(vector<vector<double>> location, vector<vector<double>> obs_center,vector<vector<vector<double>>> obs_mat,double t) {
+    int m = obs_center.size();//获取障碍物个数
+    for (int i = 0; i < m; ++i) {
+      bool flag = check_obs_constraint(location,obs_center[i],obs_mat[i],t);
+      if (!flag) {
+        return false;
+      }
+    }
+    return true;
+  }
   //返回单个障碍物对于整个轨迹的导函数，一阶偏导数即(N+1)*4*1,0,1...N个状态
   //二阶偏导数即(N+1)*4*4,0.1...N个状态
   vector<vector<vector<double>>> get_obs_bar_first_derivatives(vector<vector<double>> location, vector<double> center, vector<vector<double>> A,double t) {

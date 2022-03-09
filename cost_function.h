@@ -31,7 +31,7 @@ class L_Functions{
     //vector<vector<vector<double>>> l_ux(N,vector<vector<double>>(2,vector<double>(4,0))); //事实上，l_ux即为2*4的零矩阵
     //首先求cost function对于control的一二阶偏导数
     //l_u是一个2*1向量，0,1...N - 1个状态 
-     vector<vector<vector<double>>> get_control_first_derivatives(vector<vector<double>> control) {
+     vector<vector<vector<double>>> get_control_first_derivatives(vector<vector<double>> control,double t) {
         int n = control.size();
         vector<vector<vector<double>>> l_u(n,vector<vector<double>>(2,vector<double>(1,0)));
         for (int i = 0; i < n; ++i) {
@@ -41,7 +41,7 @@ class L_Functions{
         return l_u;
      }
      //l_uu是一个2*2矩阵，0,1...,N - 1个状态
-     vector<vector<vector<double>>> get_control_second_derivatives(vector<vector<double>> control) {
+     vector<vector<vector<double>>> get_control_second_derivatives(vector<vector<double>> control,double t) {
         int n = control.size();
         vector<vector<vector<double>>> l_uu(n,vector<vector<double>>(2,vector<double>(2,0)));
         for (int i = 0; i < n; ++i) {
@@ -52,7 +52,7 @@ class L_Functions{
      }
     //下面求cost function对于state的一二阶偏导数
     //l_x是一个4*1向量，0,1...N个状态
-     vector<vector<vector<double>>> get_state_first_derivatives(vector<vector<double>> state,vector<vector<double>> center,vector<vector<vector<double>>> A) {
+     vector<vector<vector<double>>> get_state_first_derivatives(vector<vector<double>> state,vector<vector<double>> center,vector<vector<vector<double>>> A,double t) {
         int n = state.size();//Horizon N + 1
         int l = center.size();//障碍物个数
         vector<vector<vector<double>>> l_x(n,vector<vector<double>>(4,vector<double>(1,0)));
@@ -69,7 +69,7 @@ class L_Functions{
      }
 
     //l_xx是一个4*4向量，0,1...N个状态 
-     vector<vector<vector<double>>> get_state_second_derivatives(vector<vector<double>> state,vector<vector<double>> center,vector<vector<vector<double>>> A) {
+     vector<vector<vector<double>>> get_state_second_derivatives(vector<vector<double>> state,vector<vector<double>> center,vector<vector<vector<double>>> A,double t) {
         int n = state.size();
         int l = center.size();
         vector<vector<vector<double>>> l_xx(n,vector<vector<double>>(4,vector<double>(4,0)));
@@ -121,7 +121,7 @@ class L_Functions{
       return sum;
      }
      //将加速度限制转化为barrier function
-     double cost_acc_bf(vector<vector<double>> control) {
+     double cost_acc_bf(vector<vector<double>> control,double t) {
       double sum = 0;
       for (int i = 0; i < control.size(); ++i) {
           sum -= (1/t)*log((a_high - control[i][0])*(control[i][0] - a_low));
@@ -129,7 +129,7 @@ class L_Functions{
       return sum;
      }
      //将扭转角度限制转化为barrier function
-     double cost_delta_bf(vector<vector<double>> control) {
+     double cost_delta_bf(vector<vector<double>> control,double t) {
       double sum = 0;
       for (int i = 0; i < control.size(); ++i) {
           sum -= (1/t)*log((delta_bar - control[i][1])*(control[i][1] + delta_bar));
@@ -138,13 +138,13 @@ class L_Functions{
      }
      //计算obscalcle限制并转化为barrier function,利用Barrier_Function类进行计算，直接加入到代价函数总和中
      //计算代价函数总和
-     double cost_all(vector<vector<double>> state, vector<vector<double>> control,vector<vector<double>> center,vector<vector<vector<double>>> A) {
+     double cost_all(vector<vector<double>> state, vector<vector<double>> control,vector<vector<double>> center,vector<vector<vector<double>>> A,double t) {
       double ans = 0;
       int l = center.size();//障碍物个数
       vector<vector<double>> loc = model.get_loc(state);
       double sum_1 = cost_acc(control), sum_2 = cost_steer(control);
       double sum_3 = cost_veltracking(state), sum_4 = cost_reftracking(state);
-      double sum_5 = cost_acc_bf(control), sum_6 = cost_delta_bf(control);
+      double sum_5 = cost_acc_bf(control,t), sum_6 = cost_delta_bf(control,t);
       double sum_7 = 0;
       for (int j = 0; j < l; ++j) {
         sum_7 += bar.get_obs_bar_value(loc,center[j],A[j],t);
@@ -152,6 +152,19 @@ class L_Functions{
       ans = sum_1 + sum_2 + sum_3 + sum_4 + sum_5 + sum_6 + sum_7;
       return ans;
 
+     }
+     //检验控制集是否满足限制条件
+     bool check_control(vector<vector<double>> U) {
+      int m = U.size();
+      for (int i = 0; i < m; ++i) {
+       if(U[i][0] > a_high || U[i][0] < a_low) {
+        return false;
+       }
+       if(U[i][1] < -delta_bar || U[i][1] > delta_bar) {
+        return false;
+       }
+      } 
+      return true;   
      }
     
 };

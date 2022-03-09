@@ -45,7 +45,7 @@ class iLQR {
    }
    //backward_pass过程,返回值的第一维为k，第二维为K
    
-   vector<vector<vector<vector<double>>>> backward_pass(vector<vector<double>> X,vector<vector<double>> U,vector<vector<double>> obs_center,vector<vector<vector<double>>> obs_mat) {
+   vector<vector<vector<vector<double>>>> backward_pass(vector<vector<double>> X,vector<vector<double>> U,vector<vector<double>> obs_center,vector<vector<vector<double>>> obs_mat,double t) {
        int n = U.size(); //Horizon N
        //class Obstacle obs;
        //vector<vector<double>> A = obs.get_obs_matrix(obs.theta,obs.l,obs.w,obs.v_obstacle,obs.t_safe,obs.s_safe);
@@ -53,10 +53,10 @@ class iLQR {
        //此处限制条件应该写在另外一个文件中
        double a_high = 0,a_low = 0,delta_bar = 0;
        //调用constraint类直接得到所有的状态偏导
-       vector<vector<vector<double>>> l_x = l.get_state_first_derivatives(X,obs_center,obs_mat);
-       vector<vector<vector<double>>> l_xx = l.get_state_second_derivatives(X,obs_center,obs_mat);
-       vector<vector<vector<double>>> l_u = l.get_control_first_derivatives(U);
-       vector<vector<vector<double>>> l_uu = l.get_control_second_derivatives(U);
+       vector<vector<vector<double>>> l_x = l.get_state_first_derivatives(X,obs_center,obs_mat,t);
+       vector<vector<vector<double>>> l_xx = l.get_state_second_derivatives(X,obs_center,obs_mat,t);
+       vector<vector<vector<double>>> l_u = l.get_control_first_derivatives(U,t);
+       vector<vector<vector<double>>> l_uu = l.get_control_second_derivatives(U,t);
        vector<vector<double>> l_ux(2,vector<double>(4,0));
 
        //获取model的各个状态量,调用model类的函数
@@ -108,21 +108,61 @@ class iLQR {
    }
   
 };
-/*class CiLQR {
+class CiLQR {
  public:
   class iLQR ilqr;
-  vector<vector<vector<double>>> algorithm_cilqr(vector<double> X_0, vector<vector<double>> U,double t_0,double u) {
+  class Matrix m;
+  class Model model;
+  class L_Functions l;
+  class Barrier_Function bar;
+  vector<vector<vector<double>>> algorithm_cilqr(vector<double> X_0, vector<vector<double>> U,vector<vector<double>> obs_center,vector<vector<vector<double>>> obs_mat,double t_0,double u,double eps) {
+    vector<vector<vector<double>>> ans;
+    int obs_number = obs_center.size();//获取障碍物个数
+    double t = t_0;
+    int n = U.size();//Horizon N
     vector<vector<double>> X = ilqr.get_nomial_trajectory(X_0,U);
-    vector<vector<vector<double>>> k = ilqr.get_k(ilqr.backward_pass(X,U));
-    vector<vector<vector<double>>> K = ilqr.get_K(ilqr.backward_pass(X,U));
-    double alpha = 1;
-    vector<vector<double>> X_new = ilqr.get_X_new(ilqr.forward_pass(X,U,k,K,alpha));
-    vector<vector<double>> U_new = ilqr.get_U_new(ilqr.forward_pass(X,U,k,K,alpha));
-    while (cost_all(X_new,U_new,center,A) > cost_all(X,U,center,A)) {
-      alpha/=2;
-      
+    vector<vector<double>> X_outer = X;
+    vector<vector<double>> U_outer = U;
+    vector<vector<double>> X_inner = X;
+    vector<vector<double>> U_inner = U;
+    vector<vector<double>> X_inner_new(n + 1,vector<double>(4,0));
+    vector<vector<double>> U_inner_new(n,vector<double>(2,0));
+    vector<vector<double>> X_outer_new(n + 1,vector<double>(4,0));
+    vector<vector<double>> U_outer_new(n,vector<double>(2,0));
+    while(1) {
+     while(1) {
+     vector<vector<vector<double>>> k = ilqr.get_k(ilqr.backward_pass(X,U,obs_center,obs_mat,t));
+     vector<vector<vector<double>>> K = ilqr.get_K(ilqr.backward_pass(X,U,obs_center,obs_mat,t));
+     //line search
+     while(1) {
+      double alpha = 1;
+      X_inner_new = ilqr.get_X_new(ilqr.forward_pass(X,U,k,K,alpha));
+      U_inner_new = ilqr.get_U_new(ilqr.forward_pass(X,U,k,K,alpha));
+      vector<vector<double>> loc_new = model.get_loc(X_inner_new);
+      if (l.check_control(U_inner_new) && bar.check_all_obs_constraint(loc_new,obs_center,obs_mat,t) && (l.cost_all(X_inner_new,U_inner_new,obs_center,obs_mat,t) <= l.cost_all(X_inner,U_inner,obs_center,obs_mat,t))) {
+       break;
+      }
+      alpha /= 2;   
+     }
+     if (abs(l.cost_all(X_inner_new,U_inner_new,obs_center,obs_mat,t) - l.cost_all(X_inner,U_inner,obs_center,obs_mat,t)) < eps) {
+       break;  
+     } else {
+        X_inner = X_inner_new;
+        U_inner = U_inner_new;
+     }
     }
-    
+    U_outer_new = U_inner_new;
+    X_outer_new = X_inner_new;
+    if (abs(l.cost_all(X_outer_new,U_outer_new,obs_center,obs_mat,t) - l.cost_all(X_outer,U_outer,obs_center,obs_mat,t)) < eps) {
+      ans.push_back(X_outer_new);
+      ans.push_back(U_outer_new);
+      break;
+    } else {
+       t = u*t;
+    }
+
+    }
+    return ans; 
   }
 };
-*/
+

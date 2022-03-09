@@ -43,6 +43,7 @@ class Model {
        }
       return ans;
      }
+
      //给定t时刻下的状态和控制，返回下一时刻的状态
      vector<double> forward_simulate(vector<double> state,vector<double> control){
        vector<double> next_state(4);
@@ -52,16 +53,7 @@ class Model {
        next_state[3] = state[3] + control[1]*t_r;
        return next_state;
      }
-     //输入theta值，返回df_du
-     vector<vector<vector<double>>> get_B_matrix (vector<double> theta) {
-       int n = theta.size();
-       vector<vector<vector<double>>> B(n - 1,vector<vector<double>>(4,vector<double>(2,0)));
-       for(int i = 0; i < n - 1; ++i) {
-           B[i] = {{t_r*t_r*cos(theta[i])/2, 0},{t_r*t_r*sin(theta[i])/2, 0},{t_r, 0},{0, t_r}};
-       }
-       return B;
-       //B是一个N*4*2的矩阵，0,1..N - 1时刻，表示df_du
-     }
+     
      //输入速度、theta、加速度值，返回df_dx
      vector<vector<vector<double>>> get_A_matrix (vector<double> velocity_vals, vector<double> theta, vector<double> acceleration_vals) {
        int n = theta.size();
@@ -73,4 +65,16 @@ class Model {
        return A;
        //A是一个N*4*4的矩阵，0,1..N - 1时刻，表示df_dx
      }
+     //输入theta值，返回df_du
+     vector<vector<vector<double>>> get_B_matrix (vector<double> theta) {
+       int n = theta.size();
+       vector<vector<vector<double>>> B(n - 1,vector<vector<double>>(4,vector<double>(2,0)));
+       for(int i = 0; i < n - 1; ++i) {
+           B[i] = {{t_r*t_r*cos(theta[i])/2, 0},{t_r*t_r*sin(theta[i])/2, 0},{t_r, 0},{0, t_r}};
+       }
+       return B;
+       //B是一个N*4*2的矩阵，0,1..N - 1时刻，表示df_du
+     }
+     
+     
 };

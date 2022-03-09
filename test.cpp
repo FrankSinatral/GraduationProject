@@ -6,8 +6,15 @@
  
 int main()
 {
-    int b = 1;
-    
-    std::cout << b << std::endl;
+    int sum = 0;
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        if (i + j >= 4) {
+          break;
+        }
+        sum +=(i + j);
+      }
+    }
+    std::cout << sum << std::endl;
     return 0;
 }
