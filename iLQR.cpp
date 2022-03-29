@@ -107,18 +107,18 @@ vector<vector<vector<double>>> iLQR::algorithm_cilqr(vector<double> X_0, vector<
  vector<vector<double>> X_outer_new(n + 1,vector<double>(4,0));
  vector<vector<double>> U_outer_new(n,vector<double>(2,0));
 //进入外循环
- while(1) {
+while(1) {
   //进入内循环
   while(1) {
    vector<vector<vector<double>>> k = get_k(backward_pass(X,U,obs_center,obs_mat,t));
    vector<vector<vector<double>>> K = get_K(backward_pass(X,U,obs_center,obs_mat,t));
+   double alpha = 1.0;
    //line search
     while(1) {
-     double alpha = 1;
      X_inner_new = get_X_new(forward_pass(X,U,k,K,alpha));
      U_inner_new = get_U_new(forward_pass(X,U,k,K,alpha));
      vector<vector<double>> loc_new = model.get_loc(X_inner_new);
-     if ((l.check_control(U_inner_new) && bar.check_all_obs_constraint(loc_new,obs_center,obs_mat)) || (l.cost_all(X_inner_new,U_inner_new,obs_center,obs_mat,t) <= l.cost_all(X_inner,U_inner,obs_center,obs_mat,t))) {
+     if ((l.check_control(U_inner_new) && bar.check_all_obs_constraint(loc_new,obs_center,obs_mat)) && (l.cost_all(X_inner_new,U_inner_new,obs_center,obs_mat,t) <= l.cost_all(X_inner,U_inner,obs_center,obs_mat,t))) {
       break;
      }
      alpha /= 2;   
@@ -135,17 +135,57 @@ vector<vector<vector<double>>> iLQR::algorithm_cilqr(vector<double> X_0, vector<
   U_outer_new = U_inner_new;
   X_outer_new = X_inner_new;
   if (l.cost_all(X_outer,U_outer,obs_center,obs_mat,t) - l.cost_all(X_outer_new,U_outer_new,obs_center,obs_mat,t) < eps_2) {
-    break; //已经收敛并且跳出外循环
+   break;
   } else {
-    t = u*t;//更新Barrier Function里面的参数
-    X_outer = X_outer_new;
-    U_outer = U_outer_new;
+   t = u*t;//更新Barrier Function里面的参数
+   X_outer = X_outer_new;
+   U_outer = U_outer_new;
   }
- }
-  ans.push_back(X_outer_new);
-  ans.push_back(U_outer_new);
-  return ans; 
+}
+ ans.push_back(X_outer_new);
+ ans.push_back(U_outer_new);
+ return ans; 
 }
 
+/*
+vector<vector<vector<double>>> iLQR::algorithm_cilqr(vector<double> X_0, vector<vector<double>> U,vector<vector<double>> obs_center,vector<vector<vector<double>>> obs_mat,double t_0,double u,double eps_1, double eps_2) {
+ vector<vector<vector<double>>> ans;
+ //int obs_number = obs_center.size();//获取障碍物个数
+ double t = t_0;
+ int n = U.size();//Horizon N
+ vector<vector<double>> X = model.get_nomial_trajectory(X_0,U);
+//初始化内外循环的所有new变量
+ vector<vector<double>> X_new(n + 1,vector<double>(4,0));
+ vector<vector<double>> U_new(n,vector<double>(2,0));
+
+//进入内循环
+while(1) {
+  vector<vector<vector<double>>> k = get_k(backward_pass(X,U,obs_center,obs_mat,t));
+  vector<vector<vector<double>>> K = get_K(backward_pass(X,U,obs_center,obs_mat,t));
+  double alpha = 1.0;
+  //line search
+  while(1) {
+    X_new = get_X_new(forward_pass(X,U,k,K,alpha));
+    U_new = get_U_new(forward_pass(X,U,k,K,alpha));
+    vector<vector<double>> loc_new = model.get_loc(X_new);
+    if ((l.check_control(U_new) && bar.check_all_obs_constraint(loc_new,obs_center,obs_mat)) && (l.cost_all(X_new,U_new,obs_center,obs_mat,t) <= l.cost_all(X,U,obs_center,obs_mat,t))) {
+     break;
+    }
+    alpha /= 2;   
+  }
+  if (l.cost_all(X,U,obs_center,obs_mat,t) - l.cost_all(X_new,U_new,obs_center,obs_mat,t) < eps_1) {
+   break;  //已经收敛并且跳出内循环
+  } else {
+  //没有收敛更新内循环里的状态和控制再次计算
+  X = X_new;
+  U = U_new;
+  }
+}
+ 
+ ans.push_back(X_new);
+ ans.push_back(U_new);
+ return ans; 
+}
+*/
 
 
